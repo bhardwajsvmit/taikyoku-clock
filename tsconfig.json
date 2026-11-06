@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "rootDir": "src",
+    "outDir": "build",
+    "noUnusedLocals": true
+  },
+  "files": ["src/clock.ts"]
+}

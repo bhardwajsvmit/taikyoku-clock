@@ -1,0 +1,330 @@
+<title>Taikyoku Clock</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: two facing halves of the table split by a slim control rail; the top half is turned toward the opponent. */
+:root {
+  --bg: #e7d8bb; --idle: #e2d1af; --idle-ink: #7b6646; --live: #f1c26a; --live-ink: #2a1c0c;
+  --rail: #2b231b; --rail-ink: #f3e8d2; --danger: #b8361f; --on-danger: #fff7ef;
+  --sheet: #fbf6ec; --sheet-ink: #2b2117; --line: #e3d6bd; --muted: #85735a; --field: #ffffff; --accent: #9a5a14;
+  --scrim: rgba(30, 20, 10, .45);
+  --f-digits: "Chivo Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-ui: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101416; --idle: #161c1f; --idle-ink: #6f7d83; --live: #22323a; --live-ink: #f2ede3;
+    --rail: #07090a; --rail-ink: #d9dfe1; --danger: #e0533a; --on-danger: #fff7ef;
+    --sheet: #171d20; --sheet-ink: #e7ecee; --line: #263035; --muted: #8b989e; --field: #0f1416; --accent: #e8b45d;
+    --scrim: rgba(0, 0, 0, .6); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101416; --idle: #161c1f; --idle-ink: #6f7d83; --live: #22323a; --live-ink: #f2ede3;
+  --rail: #07090a; --rail-ink: #d9dfe1; --danger: #e0533a; --on-danger: #fff7ef;
+  --sheet: #171d20; --sheet-ink: #e7ecee; --line: #263035; --muted: #8b989e; --field: #0f1416; --accent: #e8b45d;
+  --scrim: rgba(0, 0, 0, .6); color-scheme: dark;
+}
+/* Skins chosen in Settings override the automatic palette. */
+body[data-skin="wood"] {
+  --bg: #e7d8bb; --idle: #e2d1af; --idle-ink: #7b6646; --live: #f1c26a; --live-ink: #2a1c0c;
+  --rail: #2b231b; --rail-ink: #f3e8d2; --danger: #b8361f; --sheet: #fbf6ec; --sheet-ink: #2b2117;
+  --line: #e3d6bd; --muted: #85735a; --field: #fff; --accent: #9a5a14; color-scheme: light;
+}
+body[data-skin="sakura"] {
+  --bg: #f6e3e6; --idle: #f3dde1; --idle-ink: #93626c; --live: #f2a7b6; --live-ink: #3a1720;
+  --rail: #3a1f27; --rail-ink: #fbe9ec; --danger: #b3263b; --sheet: #fff7f8; --sheet-ink: #3a1f27;
+  --line: #f0d6db; --muted: #93727a; --field: #fff; --accent: #b0405a; color-scheme: light;
+}
+body[data-skin="ocean"] {
+  --bg: #0d2230; --idle: #102a3a; --idle-ink: #6d93a8; --live: #1d5b78; --live-ink: #eaf6fb;
+  --rail: #061520; --rail-ink: #cfe6f0; --danger: #f06449; --sheet: #0f2533; --sheet-ink: #e2f0f6;
+  --line: #1b3a4c; --muted: #7fa2b4; --field: #0a1c28; --accent: #5cc8e6; color-scheme: dark;
+}
+body[data-skin="contrast"] {
+  --bg: #000; --idle: #000; --idle-ink: #9a9a9a; --live: #ffe500; --live-ink: #000;
+  --rail: #000; --rail-ink: #fff; --danger: #ff3b30; --sheet: #000; --sheet-ink: #fff;
+  --line: #444; --muted: #bdbdbd; --field: #111; --accent: #ffe500; color-scheme: dark;
+}
+body[data-skin="light"] {
+  --bg: #f4f5f3; --idle: #eceeeb; --idle-ink: #7c837f; --live: #ffffff; --live-ink: #141816;
+  --rail: #1b1f1d; --rail-ink: #eef1ef; --danger: #c7372a; --sheet: #ffffff; --sheet-ink: #1b1f1d;
+  --line: #e4e7e4; --muted: #6f7772; --field: #f7f8f7; --accent: #2b6e57; color-scheme: light;
+}
+body[data-skin="dark"] {
+  --bg: #101416; --idle: #161c1f; --idle-ink: #6f7d83; --live: #22323a; --live-ink: #f2ede3;
+  --rail: #07090a; --rail-ink: #d9dfe1; --danger: #e0533a; --sheet: #171d20; --sheet-ink: #e7ecee;
+  --line: #263035; --muted: #8b989e; --field: #0f1416; --accent: #e8b45d; color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--sheet-ink); font-family: var(--f-ui); overflow: hidden; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+#app { height: 100%; display: grid; grid-template-rows: 1fr auto 1fr; }
+
+.half {
+  appearance: none; border: 0; margin: 0; font: inherit; cursor: pointer;
+  background: var(--idle); color: var(--idle-ink);
+  display: flex; align-items: center; justify-content: center; min-height: 0;
+  padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  transition: background-color .25s ease, color .25s ease;
+}
+.half.live { background: var(--live); color: var(--live-ink); }
+.half.flag { background: var(--danger); color: var(--on-danger); }
+.half:focus-visible { outline: 3px solid var(--accent); outline-offset: -6px; }
+.half { container-type: size; }
+.face { display: grid; justify-items: center; gap: clamp(6px, 1.6vh, 14px); text-align: center; }
+
+/* Layouts (set from script): facing/upright × rows/cols */
+body[data-layout="facing-rows"] #p0 .face { transform: rotate(180deg); }
+/* Let the halves run under the notch / Dynamic Island / home indicator while their content stays clear. */
+#p0 { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+#p1 { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+body[data-layout$="-cols"] .half { padding-top: calc(12px + env(safe-area-inset-top, 0px)); padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+body[data-layout$="-cols"] #app { grid-template-rows: 1fr; grid-template-columns: 1fr auto 1fr; }
+body[data-layout$="-cols"] .rail { flex-direction: column; padding-inline: 8px; padding-block: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-bottom, 0px)); }
+body[data-layout$="-cols"] .rail .group { flex-direction: column; }
+body[data-layout$="-cols"] .rail .hint { display: none; }
+body[data-layout$="-cols"] #p0 { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; }
+body[data-layout$="-cols"] #p1 { padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+body[data-layout="facing-cols"] #p0 .face { transform: rotate(90deg); }
+body[data-layout="facing-cols"] #p1 .face { transform: rotate(-90deg); }
+/* Digits fill their half on any shape of screen: iPhone, iPad split view, foldables. */
+.time { font-size: min(30cqw, 40cqh); }
+.time.long { font-size: min(20cqw, 38cqh); }
+body[data-layout="facing-cols"] .time { font-size: min(30cqh, 40cqw); }
+body[data-layout="facing-cols"] .time.long { font-size: min(20cqh, 38cqw); }
+body[data-layout="facing-cols"] .face { max-width: 100cqh; }
+
+/* Dual-screen and foldable devices that report a hinge: one player per screen, controls float clear of the fold. */
+@media (horizontal-viewport-segments: 2) {
+  #app { grid-template-rows: 1fr !important; grid-template-columns: env(viewport-segment-width 0 0, 1fr) calc(env(viewport-segment-left 1 0, 0px) - env(viewport-segment-right 0 0, 0px)) 1fr !important; }
+  .rail { grid-column: 2; grid-row: 1; padding: 0 !important; overflow: hidden; }
+  .rail > * { display: none !important; }
+  #floatRail { display: flex !important; }
+}
+@media (vertical-viewport-segments: 2) {
+  #app { grid-template-columns: 1fr !important; grid-template-rows: env(viewport-segment-height 0 0, 1fr) calc(env(viewport-segment-top 0 1, 0px) - env(viewport-segment-bottom 0 0, 0px)) 1fr !important; }
+  .rail { padding: 0 !important; overflow: hidden; }
+  .rail > * { display: none !important; }
+  #floatRail { display: flex !important; }
+}
+#floatRail { display: none; position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); gap: 8px; padding: 6px; border-radius: 999px; background: var(--rail); z-index: 5; }
+#floatRail .icon-btn { width: 40px; height: 40px; }
+.meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.pill { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1.5px solid currentColor; opacity: .85; }
+.moves { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; opacity: .7; font-variant-numeric: tabular-nums; }
+.time { font-family: var(--f-digits); font-weight: 700; line-height: .95; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.half.low:not(.flag) .time { color: var(--danger); }
+.half.live.low:not(.flag) .time { animation: pulse 1s steps(2, jump-none) infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+.info { font-size: 15px; font-weight: 600; display: flex; gap: 10px; align-items: center; min-height: 22px; font-variant-numeric: tabular-nums; }
+.stones { display: flex; gap: 6px; }
+.stone { width: 13px; height: 13px; border-radius: 50%; border: 2px solid currentColor; box-sizing: border-box; }
+.stone.on { background: currentColor; }
+
+.rail {
+  background: var(--rail); color: var(--rail-ink);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.rail .hint { flex: 1; min-width: 0; text-align: center; font-size: 13px; opacity: .75; }
+.rail .group { display: flex; gap: 10px; }
+.icon-btn { appearance: none; border: 1.5px solid color-mix(in srgb, var(--rail-ink) 30%, transparent); background: transparent; color: var(--rail-ink); width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; font: inherit; }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.icon-btn:hover:not(:disabled) { border-color: var(--rail-ink); }
+.icon-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.armed { background: var(--danger); border-color: var(--danger); color: var(--on-danger); width: auto; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+
+/* Settings sheet */
+.sheet { position: fixed; inset: 0; background: var(--scrim); display: flex; justify-content: center; z-index: 20; }
+.panel { background: var(--sheet); color: var(--sheet-ink); width: 100%; max-width: 560px; height: 100%; overflow-y: auto; box-sizing: border-box;
+  padding-block: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 32px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: -12px; background: var(--sheet); padding-block: 10px; z-index: 1; }
+.panel-head h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+.panel h2 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 22px 4px 8px; }
+.group-card { background: var(--field); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; min-height: 26px; }
+.row + .row { border-top: 1px solid var(--line); }
+.row label, .row .lbl { font-size: 15px; }
+.row .note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.row select, .row input[type="number"], .row input[type="text"] {
+  font: inherit; font-size: 15px; color: var(--sheet-ink); background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-width: 0;
+}
+.row input[type="number"] { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.row input[type="text"] { flex: 1; }
+.dur { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.stepper { display: flex; align-items: center; gap: 10px; }
+.stepper button { width: 34px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--sheet); color: var(--sheet-ink); font: inherit; font-size: 18px; cursor: pointer; }
+.stepper output { min-width: 2ch; text-align: center; font-variant-numeric: tabular-nums; }
+.switch { appearance: none; width: 46px; height: 28px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; margin: 0; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--sheet); box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(18px); }
+.btn { font: inherit; font-size: 15px; font-weight: 600; border-radius: 10px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--sheet); color: var(--sheet-ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+.btn:focus-visible, .chip:focus-visible, .switch:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); background: var(--field); color: var(--sheet-ink); border-radius: 999px; font: inherit; font-size: 14px; padding: 0; overflow: hidden; }
+.chip button { appearance: none; border: 0; background: transparent; color: inherit; font: inherit; padding: 7px 12px; cursor: pointer; }
+.stage-row .lbl { white-space: nowrap; }
+.stage-row .dur { white-space: nowrap; gap: 4px; }
+.stage-row input[type="number"] { width: 52px; }
+.stage-row .del { appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 20px; cursor: pointer; padding: 0 2px 0 6px; }
+.chip button.x { padding: 7px 10px 7px 4px; color: var(--muted); }
+.chip small { color: var(--muted); font-size: 12px; margin-left: 4px; }
+.foot-note { font-size: 13px; color: var(--muted); margin: 10px 4px 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div id="app">
+  <button class="half" id="p0" aria-label="Top player clock">
+    <span class="face">
+      <span class="meta"><span class="pill" data-k="pill"></span><span class="moves" data-k="moves"></span></span>
+      <span class="time" data-k="time">0:00</span>
+      <span class="info" data-k="info"></span>
+    </span>
+  </button>
+  <div class="rail">
+    <div class="group">
+      <button class="icon-btn" id="btnPlay" aria-label="Start or pause">
+        <svg viewBox="0 0 24 24" fill="currentColor" data-icon="play"><path d="M7 4.5v15l13-7.5z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" data-icon="pause" hidden><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>
+      </button>
+    </div>
+    <div class="hint" id="hint">Tap your side after you move</div>
+    <div class="group">
+      <button class="icon-btn" id="btnUndo" aria-label="Undo last move" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      </button>
+      <button class="icon-btn" id="btnReset" aria-label="Reset clocks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
+      </button>
+      <button class="icon-btn" id="btnSettings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </div>
+  <button class="half" id="p1" aria-label="Bottom player clock">
+    <span class="face">
+      <span class="meta"><span class="pill" data-k="pill"></span><span class="moves" data-k="moves"></span></span>
+      <span class="time" data-k="time">0:00</span>
+      <span class="info" data-k="info"></span>
+    </span>
+  </button>
+</div>
+
+<div id="floatRail" aria-label="Clock controls">
+  <button class="icon-btn" data-proxy="btnPlay" aria-label="Start or pause"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+  <button class="icon-btn" data-proxy="btnUndo" aria-label="Undo last move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+  <button class="icon-btn" data-proxy="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/></svg></button>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <form class="panel" id="form" autocomplete="off">
+    <div class="panel-head">
+      <h1>Settings</h1>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn" id="btnClose">Cancel</button>
+        <button type="submit" class="btn primary">Apply</button>
+      </div>
+    </div>
+
+    <h2>Presets</h2>
+    <div class="presets" id="presetList"></div>
+
+    <h2>Time control</h2>
+    <div class="group-card">
+      <div class="row"><label for="fMode">System</label>
+        <select id="fMode">
+          <option value="japanese">Japanese byo-yomi</option>
+          <option value="canadian">Canadian byo-yomi</option>
+          <option value="fischer">Fischer increment</option>
+          <option value="bronstein">Bronstein delay</option>
+          <option value="delay">Simple delay (US)</option>
+          <option value="absolute">Sudden death</option>
+          <option value="hourglass">Hourglass</option>
+        </select>
+      </div>
+      <div class="row"><span class="lbl">Main time</span>
+        <span class="dur"><input type="number" id="fMainMin" min="0" max="600" aria-label="Main time minutes"> min <input type="number" id="fMainSec" min="0" max="59" aria-label="Main time seconds"> s</span>
+      </div>
+      <div class="row" data-for="fischer bronstein delay"><label for="fExtra" id="lExtra">Increment</label>
+        <span class="dur"><input type="number" id="fExtra" min="0" max="600"> s per move</span>
+      </div>
+      <div class="row" data-for="japanese"><label for="fPeriods">Periods</label>
+        <span class="dur"><input type="number" id="fPeriods" min="1" max="30"></span>
+      </div>
+      <div class="row" data-for="canadian"><label for="fStones">Stones per period</label>
+        <span class="dur"><input type="number" id="fStones" min="1" max="100"></span>
+      </div>
+      <div class="row" data-for="japanese canadian"><span class="lbl">Period length</span>
+        <span class="dur"><input type="number" id="fPerMin" min="0" max="60" aria-label="Period minutes"> min <input type="number" id="fPerSec" min="0" max="59" aria-label="Period seconds"> s</span>
+      </div>
+    </div>
+    <p class="foot-note" id="modeNote"></p>
+
+    <h2 data-stage>Time stages</h2>
+    <div class="group-card" data-stage>
+      <div class="row" id="stageFirst"><span class="lbl">Stage 1</span><span class="dur" id="stageFirstText"></span></div>
+      <div id="stageRows"></div>
+      <div class="row"><button type="button" class="btn" id="btnAddStage">Add stage</button></div>
+    </div>
+    <p class="foot-note" data-stage>Add time after a move count, as in classical chess (90 min for 40 moves, then 30 more). The main time above is stage 1. Increments and delays apply in every stage. A player who runs out before reaching the move count loses.</p>
+
+    <h2>Time handicap</h2>
+    <div class="group-card">
+      <div class="row"><label for="fHcOn">Give extra main time</label><input type="checkbox" class="switch" id="fHcOn"></div>
+      <div class="row" data-hc><label for="fHcPlayer">To</label>
+        <select id="fHcPlayer"><option value="1">Bottom player</option><option value="0">Top player</option></select>
+      </div>
+      <div class="row" data-hc><span class="lbl">Extra time</span>
+        <span class="dur"><input type="number" id="fHcMin" min="0" max="600" aria-label="Handicap minutes"> min</span>
+      </div>
+    </div>
+
+    <h2>Alerts</h2>
+    <div class="group-card">
+      <div class="row"><div><span class="lbl">Countdown from</span><div class="note" id="thNote"></div></div>
+        <span class="stepper"><button type="button" id="thDown" aria-label="Fewer seconds">−</button><output id="thOut">10</output><button type="button" id="thUp" aria-label="More seconds">+</button></span>
+      </div>
+      <div class="row"><label for="fAlert">Alert</label>
+        <select id="fAlert"><option value="voice">Spoken countdown</option><option value="beep">Beeps</option><option value="off">Silent</option></select>
+      </div>
+      <div class="row"><label for="fLang">Voice language</label><select id="fLang"></select></div>
+      <div class="row"><label for="fVib">Vibration</label><input type="checkbox" class="switch" id="fVib"></div>
+      <div class="row"><label for="fTap">Haptic tap on move</label><input type="checkbox" class="switch" id="fTap"></div>
+    </div>
+
+    <h2>Appearance</h2>
+    <div class="group-card">
+      <div class="row"><label for="fTheme">Theme</label>
+        <select id="fTheme">
+          <option value="auto">Match device</option><option value="wood">Kaya wood</option><option value="sakura">Cherry blossom</option>
+          <option value="ocean">Ocean</option><option value="contrast">High contrast</option><option value="light">Light</option><option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="row"><div><label for="fLayout">Layout</label><div class="note">Wide screens show the players side by side</div></div>
+        <select id="fLayout">
+          <option value="auto">Automatic</option>
+          <option value="facing">Facing each other</option>
+          <option value="upright">Both upright (clock beside the board)</option>
+        </select>
+      </div>
+    </div>
+
+    <h2>Save as preset</h2>
+    <div class="group-card">
+      <div class="row"><input type="text" id="fPresetName" placeholder="e.g. Club night 20m + 5×20s" maxlength="40" aria-label="Preset name"><button type="button" class="btn" id="btnSave">Save</button></div>
+    </div>
+    <p class="foot-note">Apply resets both clocks to the new time control. Theme and alert changes take effect without a reset. Keyboard: Space ends the running player's turn, P pauses, U undoes the last move.</p>
+  </form>
+</div>
+
+<script>
+/*__SCRIPT__*/
+</script>

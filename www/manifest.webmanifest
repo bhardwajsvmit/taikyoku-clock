@@ -1,0 +1,20 @@
+{
+  "name": "Taikyoku Clock",
+  "short_name": "Taikyoku",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#e7d8bb",
+  "theme_color": "#2b231b",
+  "icons": [
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}

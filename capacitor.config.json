@@ -1,0 +1,10 @@
+{
+  "appId": "app.taikyoku.clock",
+  "appName": "Taikyoku Clock",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#e7d8bb"
+  }
+}
