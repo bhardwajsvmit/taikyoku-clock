@@ -11,7 +11,7 @@ for (const b of blocks) {
   const w = b.match(/font-weight: ([\d ]+);/)[1].trim().replace(/\s+/g, "-");
   const file = `${fam}-${w}.woff2`;
   writeFileSync(`assets/fonts/${file}`, Buffer.from(await (await fetch(url)).arrayBuffer()));
-  out += b.replace(url, `fonts/${file}`).replace("/* latin */", "").trim() + "\n";
+  out += b.replace(url, file).replace("/* latin */", "").trim() + "\n";
   n++;
 }
 writeFileSync("assets/fonts/fonts.css", out);

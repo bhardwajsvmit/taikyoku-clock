@@ -49,6 +49,20 @@ writeFileSync("www/index.html", `<!doctype html>
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Taikyoku Clock</title>
+<script>
+  // Startup safety net: if anything fails while the app loads, show it on screen instead of a blank view.
+  (function () {
+    function show(msg) {
+      var d = document.getElementById("bootError") || document.createElement("pre");
+      d.id = "bootError";
+      d.style.cssText = "position:fixed;inset:auto 0 0 0;z-index:99;margin:0;padding:16px;max-height:50%;overflow:auto;background:#300;color:#fdd;font:12px/1.4 ui-monospace,monospace;white-space:pre-wrap";
+      d.textContent += msg + "\\n";
+      (document.body || document.documentElement).appendChild(d);
+    }
+    window.addEventListener("error", function (e) { show("Error: " + e.message + " (" + (e.filename || "").split("/").pop() + ":" + e.lineno + ")"); });
+    window.addEventListener("unhandledrejection", function (e) { show("Unhandled: " + (e.reason && e.reason.message || e.reason)); });
+  })();
+</script>
 ${body}
 </html>
 `);
